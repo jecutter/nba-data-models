@@ -13,7 +13,7 @@ Various data scraping tools were used: Scrapy (an open source Python web crawler
 To scrape HTML data from simple, static webpages, Scrapy is used. This is done for the following pages:
 * https://www.basketball-reference.com (for some basic and advanced stats not obtained from NBA.com)
 * http://www.espn.com/nba/statistics/rpm (for ESPN Real Plus-Minus advanced player stats)
-* http://insider.espn.com/nba/hollinger (for advanced Hollinger player stats)
+* http://insider.espn.com/nba/hollinger/statistics/_/qualified/false (for advanced Hollinger player stats)
 
 For interactive, dynamic pages served using Javascript, web drivers are used with Selenium and lxml to make table selections and parse the HTML:
 * https://stats.nba.com/draft/combine-anthro (for draft combine data on drafted players)
