@@ -91,3 +91,7 @@ The way to take into account all players on the floor is to calculate the "APM" 
 The problem with this method is that there is enormous variance in the coefficients due to multicollinearity between players. We therefore perform a modified/perturbed regression, a Bayesian filtering process which introduces bias but greatly reduces the variance by penalizing (regularizing) outliers. The result is a set of player RAPM coefficients, which give a relative ranking of the player's impact. More mathematical details are given in the notebook.
 
 Validation of the RAPM model is difficult, since it incorporates a global dataset to produce relative (but biased) player rankings. This means that it is not particularly useful for predicting true lineup matchup results. However, it is useful for scouting players whose impact may be underrated by their environment or have winning qualities that are intangible.
+
+### Lineup Optimization
+
+Work in progress.
