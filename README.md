@@ -44,7 +44,7 @@ K-means clustering is used to lump players into categories based on a few key tr
 * Defensive specialization ('BLK_PH', 'DFGP_3PT_PG', 'DFGP_PG')
 * Usage rate ('USG')
 
-The stats used for clustering are chosen for each position through trial-and-error, using silhouette scores to evaluate the best training features. This silhouette analysis also gives the optimal of clusters to use at each position.
+The stats used for clustering are chosen for each position through trial-and-error, using silhouette scores to evaluate the best training features. This silhouette analysis also gives the optimal number of clusters to use at each position.
 
 This notebook examines offensive and defensive performance metrics (including the relationship between different efficiency stats), shot selection (including distance from basket, number of dribbles, and defender proximity), and offensive and defensive play types used.
 
