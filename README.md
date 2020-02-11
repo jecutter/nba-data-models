@@ -49,6 +49,15 @@ The stats used for clustering are chosen for each position through trial-and-err
 This notebook examines offensive and defensive performance metrics (including the relationship between different efficiency stats), shot selection (including distance from basket, number of dribbles, and defender proximity), and offensive and defensive play types used.
 
 
+## A Bokeh Application for Exploring Player Data
+
+A primitive Bokeh application has been developed for interactively filtering and plotting player data, which expedites the exploration of player stats. Note that Bokeh software is needed as a prerequisite to run this application (see https://bokeh.org/).
+
+To run the local Bokeh server (which should automatically open at http://localhost:5006/bokeh_app in your browser), run the following command:
+
+> bokeh serve --show bokeh_app/
+
+
 ## Modeling for Player and Lineup Evaluation
 
 The "Data_Modeling" directory contains some NBA models in various stages of development.
