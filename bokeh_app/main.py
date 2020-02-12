@@ -16,7 +16,6 @@ df = pd.read_csv('~/Projects/Data_Science/nba-data-models/CompleteNBAPlayerStats
 # Grab list of stats/columns from dataframe
 #stats = sorted(df.columns.values)
 stats = list(df.columns.values)
-#print(stats)
 
 # Grab list of teams
 teams = np.unique(df.team.values)
@@ -34,7 +33,7 @@ years = np.unique(df.year.values)
 #}
 
 # Create description block for the page header
-desc = Div(text=open(join(dirname(__file__), "title.html")).read(), sizing_mode="stretch_width")
+#desc = Div(text=open(join(dirname(__file__), "title.html")).read(), sizing_mode="stretch_width")
 
 player_sel = TextInput(title="Player Names:")
 team_sel = Select(title="Team:", options=teams, value='All')
@@ -45,28 +44,12 @@ max_year = Slider(title="Ending Season:", start=2016, end=2020, value=2019, step
 x_axis = Select(title="X Axis", options=stats, value="2PP_PH")
 y_axis = Select(title="Y Axis", options=stats, value="3PP_PH")
 
-source = ColumnDataSource(data=dict(x=[], y=[], name=[], year=[]))
+source = ColumnDataSource(data=dict(x=[], y=[], name=[], year=[], team=[], color=[], alpha=[]))
 
 def SelectPlayers():
 	player = player_sel.value
 	team = team_sel.value
 	dfc = df.copy()
-	
-	#if player == '' and team == 'All':
-	#	dfc["color"] = 'red'
-	#	dfc["alpha"] = 0.9
-	#elif team != 'All':
-	#	if team == 'Multiple':
-	#		dfc["color"] = np.where(dfc.team == 'TOT', "red", "grey")
-	#		dfc["alpha"] = np.where(dfc.team == 'TOT', 0.9, 0.25)
-	#	else:
-	#		dfc["color"] = np.where(dfc.team == team, "red", "grey")
-	#		dfc["alpha"] = np.where(dfc.team == team, 0.9, 0.25)
-	#else:
-	#	dfc["color"] = np.where(dfc.name.str.lower().str.contains(player), "red", "grey")
-	#	dfc["alpha"] = np.where(dfc.name.str.lower().str.contains(player), 0.9, 0.25)
-	#
-	#dfc = dfc[(dfc.year >= min_year.value) & (dfc.year <= max_year.value)]  
 	
 	if player == '':
 		mask_player = np.ones(len(dfc.index), dtype=bool)
@@ -101,7 +84,7 @@ def UpdatePlot():
 
 	p.xaxis.axis_label = x_axis.value
 	p.yaxis.axis_label = y_axis.value
-	p.title.text = "%d players selected" % len(df)
+#	p.title.text = "%d players selected" % len(df)
 	source.data = dict(
 		x = dfp[x_name],
 		y = dfp[y_name],
@@ -130,7 +113,7 @@ inputs = column(*controls, width=320, height=700)
 inputs.sizing_mode = "fixed"
 
 l = layout([
-    [desc],
+    #[desc],
 		[inputs, p],
 #], sizing_mode="scale_both")
 ])

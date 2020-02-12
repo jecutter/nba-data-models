@@ -1,0 +1,24 @@
+{% extends base %}
+
+{% block preamble %}
+	<!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"> -->
+	<link href="https://fonts.googleapis.com/css?family=Alegreya Sans SC" rel='stylesheet'>
+{% endblock %}
+
+{% block postamble %}
+  <style>
+    {% include 'styles.css' %}
+  </style>
+{% endblock %}
+
+{% block contents %}
+  <div class="page-header">
+    <h1>NBA Stats Explorer</h1>
+    <p>An interactive plotter for NBA data.</p>
+	</div>
+	
+	<div class="content">
+    <!-- <p>An interactive plotter for NBA data.</p> -->
+    {{ super() }}
+  </div>
+{% endblock %}
