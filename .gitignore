@@ -2,4 +2,6 @@
 *.json
 *.csv
 
+# Ignore backup and checkpoint files
 .ipynb_checkpoints
+.swp
