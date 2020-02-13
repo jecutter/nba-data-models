@@ -6,140 +6,189 @@ import matplotlib.pyplot as plt
 
 from bokeh.io import curdoc
 from bokeh.layouts import column, layout
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, Panel
-from bokeh.models.widgets import Tabs
+from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, Panel, BoxAnnotation
+from bokeh.models.widgets import Tabs, DataTable, DateFormatter, TableColumn
 from bokeh.plotting import figure
-#from bokeh import mpl
 
-def playbyplay_tab(df):
+
+global_boxes = []
+
+def ControlUpdate(df, source, controls, plot):
+	global global_boxes
+
+	mask, starts, ends = PBPMask(df, controls)
+	team = controls[0].value
+	game = controls[2].value
+	y_name = controls[4].value
+
+	df_mask = df[mask]
+
+	if len(starts) > 0:
+		keep_starts = np.ones(len(starts), dtype=bool)
+		keep_ends = np.ones(len(ends), dtype=bool)
+		prev_end = -1
+		for i in np.arange(len(starts)):
+			#print(starts[i], ends[i])
+			if starts[i] == ends[i]:
+				#print('throwing out equal starts ends:', starts[i], ends[i])
+				keep_starts[i] = False
+				if ends[i] != 2880.:
+					keep_ends[i] = False
+			if i > 0:
+				if starts[i] - prev_end <= 2.:
+					#print('throwing out overlapping intervals, deleting:', ends[i-1], starts[i])
+					keep_starts[i] = False
+					keep_ends[i-1] = False
+			#print('setting previous end to', ends[i])
+			prev_end = ends[i]
+		#print(keep_starts, keep_ends)
+		#print(np.array(starts)[keep_starts])
+		#print(np.array(ends)[keep_ends])
+		starts = list(np.array(starts)[keep_starts])
+		ends = list(np.array(ends)[keep_ends])
+
+	boxes = []
+	for start,end in zip(starts, ends):
+		#print('made it', start, end)
+		box = BoxAnnotation(left=start, right=end,
+											line_width=1, line_color='black', line_dash='dashed',
+											fill_alpha=0.2, fill_color='orange')
+		print('box', box)
+		plot.add_layout(box)
+		boxes.append(box)
+
+	#if len(boxes) != 0:
+	#	plot.renderers.extend(boxes)
+	#	global_boxes += boxes
+	#else:
+	#	if len(global_boxes) > 0:
+	#		plot.renderers.remove(global_boxes)
+	#	#for i, r in enumerate(plot.renderers):
+	#	#	print(r)
+	#	#	if i > 0:
+	#	#		plot.renderers.remove(r)
+
+	# Title
+	if df_mask.home_team.values[0] == team:
+		title = "Game " + game + " for " + team + ": At Home (vs. " + df_mask.vis_team.values[0] + ")"
+	else:
+		title = "Game " + game + " for " + team + ": Away Team (vs. " + df_mask.home_team.values[0] + ")"
+
+	plot.title.text = title
+	plot.title.text_font_size = '20pt'
+	plot.title.text_font = 'serif'
+	plot.title.align = 'center'
+
+  # Axis titles
+	plot.xaxis.axis_label = 'Time (seconds)' 
+	plot.yaxis.axis_label = y_name 
+	plot.xaxis.axis_label_text_font_size = '12pt'
+	plot.xaxis.axis_label_text_font_style = 'bold'
+	plot.yaxis.axis_label_text_font_size = '12pt'
+	plot.yaxis.axis_label_text_font_style = 'bold'
+
+  # Tick labels
+	plot.xaxis.major_label_text_font_size = '12pt'
+	plot.yaxis.major_label_text_font_size = '12pt'
+
+	# Update source data
+	source.data = dict(
+		x = df_mask['time_sec'],
+		y = df_mask[y_name],
+		home_play = df_mask['ht_play'],
+		away_play = df_mask['vt_play']
+		#color = df_mask["color"],
+		#alpha = df_mask["alpha"]
+	)
+
+def PBPMask(df, controls):
+	# Group dataframe by team and establish for which games
+	# the team is at home or away
+	team = controls[0].value
+	mask_team = ((df.home_team == team) | (df.vis_team == team))
+
+	year = int(controls[1].value)
+	mask_year = (df.year == year)
+
+	game_idx = int(controls[2].value)-1
+	team_games = np.unique(df[mask_team & mask_year].groupby(['game'], as_index=False).mean().game)
+	mask_game = (df.game == team_games[game_idx])
+	
+	mask = np.logical_and(mask_team, mask_year)
+	mask = np.logical_and(mask, mask_game)
+
+	df_masked = df[mask]
+	
+	# Create player mask
+	player = controls[3].value.lower()
+	if player == '':
+		player_starts = []
+		player_ends = []
+	else:
+		dfhead = df_masked.groupby((df_masked[['ht_lineup','vt_lineup']] != df_masked[['ht_lineup','vt_lineup']].shift(1)).any(axis=1).cumsum()).head(1).reset_index(drop=True)
+		dftail = df_masked.groupby((df_masked[['ht_lineup','vt_lineup']] != df_masked[['ht_lineup','vt_lineup']].shift(1)).any(axis=1).cumsum()).tail(1).reset_index(drop=True)
+		player_start_mask = ((dfhead.ht_lineup.str.lower().str.contains(player) & (dfhead.home_team == team)) | (dfhead.vt_lineup.str.lower().str.contains(player) & (dfhead.vis_team == team)))
+		player_end_mask = ((dftail.ht_lineup.str.lower().str.contains(player) & (dftail.home_team == team)) | (dftail.vt_lineup.str.lower().str.contains(player) & (dftail.vis_team == team)))
+		player_starts = list(dfhead[player_start_mask].time_sec.values)
+		player_ends = list(dftail[player_end_mask].time_sec.values)
+
+	return mask, player_starts, player_ends
+
+
+def playbyplay_tab(dft):
 	# Grab list of stats/columns from dataframe
-	#stats = sorted(df.columns.values)
-	stats = list(df.columns.values)
+	stats = list(dft.columns.values)
 
 	# Grab list of teams
-	teams = np.unique(df.team.values)
-	teams = np.insert(teams, 0, 'All')
-	teams = np.insert(teams, 1, 'Multiple')
+	teams = np.unique(dft.home_team.values)
 	teams = teams[teams != 'TOT']
 	teams = list(teams)
 
-	age_low = min(df.age.values)
-	age_high = max(df.age.values)
+	# Grab list of years/seasons
+	years = list(np.unique(dft.year.values).astype(str))
 
-	#axis_map = {
-	#	"2 PT %": "2PP_PH",
-	#	"3 PT %": "3PP_PH",
-	#}
+	# Create a list of games (each team plays games 1-82)
+	games = list(np.arange(1,83).astype(str))
 
-	# Create description block for the page header
-	#desc = Div(text=open(join(dirname(__file__), "title.html")).read(), sizing_mode="stretch_width")
+	team_sel = Select(title="Team:", options=teams, value='ATL')
+	year_sel = Select(title="Season:", options=years, value='2017')
+	game_sel = Select(title="Game:", options=games, value='1')
+	stint_sel = TextInput(title="Stints Containing Player:")
+	y_axis = Select(title="Y Axis", options=stats, value="ht_margin")
 
-	player_sel = TextInput(title="Player Names:")
-	min_age = Slider(title="Min Age", start=age_low, end=age_high, value=age_low, step=1)
-	max_age = Slider(title="Max Age", start=age_low, end=age_high, value=age_high, step=1)
-	team_sel = Select(title="Team:", options=teams, value='All')
-	min_year = Slider(title="Starting Season", start=2016, end=2020, value=2016, step=1)
-	max_year = Slider(title="Ending Season", start=2016, end=2020, value=2019, step=1)
-	#x_axis = Select(title="X Axis", options=sorted(axis_map.keys()), value="2 PT %")
-	#y_axis = Select(title="Y Axis", options=sorted(axis_map.keys()), value="3 PT %")
-	x_axis = Select(title="X Axis", options=stats, value="height")
-	y_axis = Select(title="Y Axis", options=stats, value="weight")
+	# Create a data source dictionary for storing data with each update
+	#source = ColumnDataSource(data=dict(x=[], y=[], home_play=[], away_play=[], color=[], alpha=[]))
+	source = ColumnDataSource(data=dict(x=[], y=[], home_play=[], away_play=[]))
 
-	source = ColumnDataSource(data=dict(x=[], y=[], name=[], year=[], team=[], color=[], alpha=[]))
-
-	def SelectPlayers():
-		player = player_sel.value
-		team = team_sel.value
-		dfc = df.copy()
-		
-		if player == '':
-			mask_player = np.ones(len(dfc.index), dtype=bool)
-		else:
-			mask_player = dfc.name.str.lower().str.contains(player)
-		
-		if team == 'All':
-			mask_team = np.ones(len(dfc.index), dtype=bool)
-		else:
-			if team == 'Multiple':
-				mask_team = (dfc.team == 'TOT')
-			else:
-				mask_team = (dfc.team == team)
-
-		mask_year = ((dfc.year >= min_year.value) & (dfc.year <= max_year.value))
-		mask_age = ((dfc.age >= min_age.value) & (dfc.age <= max_age.value))
-		
-		mask = np.logical_and(mask_player, mask_team)
-		mask = np.logical_and(mask, mask_year)
-		mask = np.logical_and(mask, mask_age)
-
-		dfc["color"] = np.where(mask, "red", "grey")
-		dfc["alpha"] = np.where(mask, 0.9, 0.25)
-
-		return dfc
-
-	def UpdatePlot():
-		dfp = SelectPlayers()
-
-		#x_name = axis_map[x_axis.value]
-		#y_name = axis_map[y_axis.value]
-		x_name = x_axis.value
-		y_name = y_axis.value
-
-		# Title 
-		#p.title.text = "%d players selected" % len(df)
-		#p.title.text_font_size = '20pt'
-		#p.title.text_font = 'serif'
-		#p.title.align = 'center'
-
-    # Axis titles
-		p.xaxis.axis_label = x_axis.value
-		p.yaxis.axis_label = y_axis.value
-		p.xaxis.axis_label_text_font_size = '12pt'
-		p.xaxis.axis_label_text_font_style = 'bold'
-		p.yaxis.axis_label_text_font_size = '12pt'
-		p.yaxis.axis_label_text_font_style = 'bold'
-
-    # Tick labels
-		p.xaxis.major_label_text_font_size = '12pt'
-		p.yaxis.major_label_text_font_size = '12pt'
-
-		source.data = dict(
-			x = dfp[x_name],
-			y = dfp[y_name],
-			name = dfp['name'],
-			year = dfp['year'],
-			team = dfp['team'],
-			color = dfp['color'],
-			alpha = dfp['alpha'] 
-		)
-
-
+	# Create tooltips object for hover variables,
+	# and create figure for scatterplot
 	TOOLTIPS=[
-		("Name", "@name"),
-		("Year", "@year"),
-		("Team", "@team")
+		("H.T. Play:", "@home_play"),
+		("A.T. Play:", "@away_play")
 	]
 
-	p = figure(plot_height=650, plot_width=750, title="", tooltips=TOOLTIPS, sizing_mode="scale_both")
-	p.circle(x="x", y="y", source=source, size=7, line_color=None, color='color', fill_alpha='alpha')
+	p = figure(plot_height=550, plot_width=1000, title="", tooltips=TOOLTIPS, sizing_mode="scale_both")
+	#p.line(x="x", y="y", source=source, line_width=2, color='color', line_alpha='alpha')
+	p.line(x="x", y="y", source=source, line_width=2, color='black')
 
-	controls = [ player_sel, min_age, max_age, team_sel, min_year, max_year, x_axis, y_axis ]
+	# Create controls for filtering plotted data
+	controls = [ team_sel, year_sel, game_sel, stint_sel, y_axis ]
 	for control in controls:
-			control.on_change('value', lambda attr, old, new: UpdatePlot())
+			control.on_change('value', lambda attr, old, new: ControlUpdate(dft, source, controls, p))
 
-	inputs = column(*controls, width=320, height=650)
+	# Do a preliminary update of plot
+	ControlUpdate(dft, source, controls, p)
+
+	# Create layout by column
+	inputs = column(*controls, width=250, height=600)
 	inputs.sizing_mode = "fixed"
-
 	l = layout([
-			#[desc],
 			[inputs, p],
 	#], sizing_mode="scale_both")
 	])
 
-	UpdatePlot()
-
 	# Make a tab with the layout 
-	tab = Panel(child=l, title = 'Play-By-Play')
-	
+	tab = Panel(child=l, title = 'Game Play-By-Play')
+		
 	return tab
 

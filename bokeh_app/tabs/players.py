@@ -10,16 +10,14 @@ from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, Panel
 from bokeh.models.widgets import Tabs, DataTable, DateFormatter, TableColumn
 from bokeh.plotting import figure
 
-def ControlUpdate(df, source, controls, plot, table):
+def ControlUpdate(df, psource, tsource, controls, plot, table):
 	mask = PlayerMask(df, controls)
 	x_name = controls[6].value
 	y_name = controls[7].value
 
 	df["color"] = np.where(mask, "red", "grey")
 	df["alpha"] = np.where(mask, 0.9, 0.25)
-
-	#x_name = axis_map[x_name]
-	#y_name = axis_map[y_name]
+	df_mask = df[mask]
 
 	# Title 
 	#plot.title.text = "%d players selected" % len(dfp)
@@ -39,7 +37,14 @@ def ControlUpdate(df, source, controls, plot, table):
 	plot.xaxis.major_label_text_font_size = '12pt'
 	plot.yaxis.major_label_text_font_size = '12pt'
 
-	source.data = dict(
+	table.columns = [
+		TableColumn(field="name", title='Name'),
+		TableColumn(field="year", title='Season'),
+		TableColumn(field="x", title=x_name),
+		TableColumn(field="y", title=y_name),
+	]
+	
+	psource.data = dict(
 		x = df[x_name],
 		y = df[y_name],
 		name = df['name'],
@@ -49,12 +54,15 @@ def ControlUpdate(df, source, controls, plot, table):
 		alpha = df['alpha'] 
 	)
 
-	table.columns = [
-		TableColumn(field="name", title='Name'),
-		TableColumn(field="year", title='Season'),
-		TableColumn(field="x", title=x_name),
-		TableColumn(field="y", title=y_name),
-	]
+	tsource.data = dict(
+		x = df_mask[x_name],
+		y = df_mask[y_name],
+		name = df_mask['name'],
+		year = df_mask['year'],
+		team = df_mask['team'],
+		color = df_mask['color'],
+		alpha = df_mask['alpha'] 
+	)
 
 def PlayerMask(df, controls):
 	player = controls[0].value
@@ -82,73 +90,6 @@ def PlayerMask(df, controls):
 
 	return mask
 
-#def SelectPlayers(df):
-#	dfp = df.copy()
-#	mask = PlayerMask(df)
-#	df["color"] = np.where(mask, "red", "grey")
-#	df["alpha"] = np.where(mask, 0.9, 0.25)
-#	return df
-#
-#def UpdatePlot(df, mask):
-#	df["color"] = np.where(mask, "red", "grey")
-#	df["alpha"] = np.where(mask, 0.9, 0.25)
-#
-#	#x_name = axis_map[x_axis.value]
-#	#y_name = axis_map[y_axis.value]
-#	#x_name = x_axis.value
-#	#y_name = y_axis.value
-#
-#	# Title 
-#	#p.title.text = "%d players selected" % len(dfp)
-#	#p.title.text_font_size = '20pt'
-#	#p.title.text_font = 'serif'
-#	#p.title.align = 'center'
-#
-#  # Axis titles
-#	p.xaxis.axis_label = x_axis.value
-#	p.yaxis.axis_label = y_axis.value
-#	p.xaxis.axis_label_text_font_size = '12pt'
-#	p.xaxis.axis_label_text_font_style = 'bold'
-#	p.yaxis.axis_label_text_font_size = '12pt'
-#	p.yaxis.axis_label_text_font_style = 'bold'
-#
-#  # Tick labels
-#	p.xaxis.major_label_text_font_size = '12pt'
-#	p.yaxis.major_label_text_font_size = '12pt'
-#
-#	source.data = dict(
-#		x = df[x_name],
-#		y = df[y_name],
-#		name = df['name'],
-#		year = df['year'],
-#		team = df['team'],
-#		color = df['color'],
-#		alpha = df['alpha'] 
-#	)
-#
-#def UpdateTable():
-#	x_name = x_axis.value
-#	y_name = y_axis.value
-#	
-#	data_table.columns = [
-#		TableColumn(field="name", title='Name'),
-#		TableColumn(field="year", title='Season'),
-#		TableColumn(field="x", title=x_axis.value),
-#		TableColumn(field="y", title=y_axis.value),
-#	]
-#
-#	df = SelectPlayers()
-#	mask = PlayerMask(df)
-#	df_masked = df.where(mask)
-#	source.data = dict(
-#		x = df_masked[x_name],
-#		y = df_masked[y_name],
-#		name = df_masked['name'],
-#		year = df_masked['year'],
-#		team = df_masked['team'],
-#		color = df_masked['color'],
-#		alpha = df_masked['alpha'] 
-#	)
 
 def player_tab(dfp):
 	# Grab list of stats/columns from dataframe
@@ -183,7 +124,8 @@ def player_tab(dfp):
 	y_axis = Select(title="Y Axis", options=stats, value="weight")
 
 	# Create a data source dictionary for storing data with each update
-	source = ColumnDataSource(data=dict(x=[], y=[], name=[], year=[], team=[], color=[], alpha=[]))
+	psource = ColumnDataSource(data=dict(x=[], y=[], name=[], year=[], team=[], color=[], alpha=[]))
+	tsource = ColumnDataSource(data=dict(x=[], y=[], name=[], year=[], team=[], color=[], alpha=[]))
 
 	# Create tooltips object for hover variables,
 	# and create figure for scatterplot
@@ -194,7 +136,7 @@ def player_tab(dfp):
 	]
 
 	p = figure(plot_height=600, plot_width=700, title="", tooltips=TOOLTIPS, sizing_mode="scale_both")
-	p.circle(x="x", y="y", source=source, size=7, line_color=None, color='color', fill_alpha='alpha')
+	p.circle(x="x", y="y", source=psource, size=7, line_color=None, color='color', fill_alpha='alpha')
 
 	columns = [
 		TableColumn(field="name", title='Name'),
@@ -202,15 +144,15 @@ def player_tab(dfp):
 		TableColumn(field="x", title=x_axis.value),
 		TableColumn(field="y", title=y_axis.value),
 	]
-	data_table = DataTable(source=source, columns=columns, width=275, height=550)
+	data_table = DataTable(source=tsource, columns=columns, width=275, height=550)
 
 	# Create controls for filtering plotted/table data
 	controls = [ player_sel, min_age, max_age, team_sel, min_year, max_year, x_axis, y_axis ]
 	for control in controls:
-			control.on_change('value', lambda attr, old, new: ControlUpdate(dfp, source, controls, p, data_table))
+			control.on_change('value', lambda attr, old, new: ControlUpdate(dfp, psource, tsource, controls, p, data_table))
 
 	# Do a preliminary update of plot and table
-	ControlUpdate(dfp, source, controls, p, data_table)
+	ControlUpdate(dfp, psource, tsource, controls, p, data_table)
 
 	# Create layout by column
 	inputs = column(*controls, width=250, height=600)

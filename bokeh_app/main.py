@@ -16,17 +16,21 @@ from tabs.lineups import lineup_tab
 from tabs.playbyplay import playbyplay_tab
 
 
-# Grab relative path to dataset
+# Grab relative path to datasets
 current_file = os.path.abspath(os.path.dirname(__file__))
 player_csv_file = os.path.join(current_file, '../CompleteNBAPlayerStats.csv')
+lineup_csv_file = os.path.join(current_file, '../NBALineupStats.csv')
+pbp_csv_file = os.path.join(current_file, '../NBA_PBP_Data_PlusMinus.csv')
 
 # Load NBA player data
 df_player = pd.read_csv(player_csv_file)
+df_lineup = pd.read_csv(lineup_csv_file)
+df_pbp = pd.read_csv(pbp_csv_file)
 
 # Create each of the tabs
 tab1 = player_tab(df_player)
-tab2 = lineup_tab(df_player)
-tab3 = playbyplay_tab(df_player)
+tab2 = lineup_tab(df_lineup)
+tab3 = playbyplay_tab(df_pbp)
 
 # Collect created tabs
 tabs = Tabs(tabs = [tab1, tab2, tab3])
