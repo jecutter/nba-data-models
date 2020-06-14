@@ -58,6 +58,10 @@ To run the local Bokeh server (which should automatically open at http://localho
 > bokeh serve --show bokeh_app/
 
 
+
+NOTE: It is always possible that data has moved/been removed from the repo, however the necessary data may be regenerated using the scraping tools provided in this repo.
+
+
 ## Modeling for Player and Lineup Evaluation
 
 The "Data_Modeling" directory contains some NBA models in various stages of development.
