@@ -57,7 +57,10 @@ To run the local Bokeh server (which should automatically open at http://localho
 
 > bokeh serve --show bokeh_app/
 
-
+Shown below are some examples of how the player, lineup, and play-by-play tabs can be used:
+![alt text](https://github.com/jecutter/nba-data-models/blob/master/img/nba_stats_explorer_curry_player_ex.png?raw=true)
+![alt text](https://github.com/jecutter/nba-data-models/blob/master/img/nba_stats_explorer_curry_lineup_ex.png?raw=true)
+![alt text](https://github.com/jecutter/nba-data-models/blob/master/img/nba_stats_explorer_curry_pbp_ex.png?raw=true)
 
 NOTE: It is always possible that data has moved/been removed from the repo, however the necessary data may be regenerated using the scraping tools provided in this repo.
 
