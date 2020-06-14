@@ -120,8 +120,8 @@ def player_tab(dfp):
 	max_year = Slider(title="Ending Season", start=2016, end=2020, value=2019, step=1)
 	#x_axis = Select(title="X Axis", options=sorted(axis_map.keys()), value="2 PT %")
 	#y_axis = Select(title="Y Axis", options=sorted(axis_map.keys()), value="3 PT %")
-	x_axis = Select(title="X Axis", options=stats, value="height")
-	y_axis = Select(title="Y Axis", options=stats, value="weight")
+	x_axis = Select(title="X Axis", options=stats, value="FG_FREQ_05FT")
+	y_axis = Select(title="Y Axis", options=stats, value="FG_FREQ_GT24FT")
 
 	# Create a data source dictionary for storing data with each update
 	psource = ColumnDataSource(data=dict(x=[], y=[], name=[], year=[], team=[], color=[], alpha=[]))
