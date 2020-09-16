@@ -19,7 +19,7 @@ from tabs.playbyplay import playbyplay_tab
 # Grab relative path to datasets
 current_file = os.path.abspath(os.path.dirname(__file__))
 player_csv_file = os.path.join(current_file, '../CompleteNBAPlayerStats.csv')
-lineup_csv_file = os.path.join(current_file, '../NBALineupStats.csv')
+lineup_csv_file = os.path.join(current_file, '../NBALineupStats_preInsight.csv')
 pbp_csv_file = os.path.join(current_file, '../NBA_PBP_Data_PlusMinus.csv')
 
 # Load NBA player data
